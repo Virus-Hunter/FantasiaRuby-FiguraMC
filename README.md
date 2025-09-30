@@ -13,9 +13,24 @@ This is Fantasia Ruby, an avatar project based on my OC. I was working on this f
 - Strip down to her skivvies for underwater treasure hunting (toggleable in the action wheel)
 - Cloud compatible!
 
-You are free to customize Ruby or use her as a base for your own characters.
+## 3rd party scripts used:
 
-3rd party scripts used:
-- Squishy API
-- GSAnimBlend
-- EZAnims
+- [Squishy API](https://github.com/MrSirSquishy/SquishyAPI)
+- [GSAnimBlend](https://github.com/GrandpaScout/GSAnimBlend)
+- [EZAnims](https://github.com/JimmyHelp/JimmyAnims)
+
+## Usage
+
+### Non-Commercial or Personal Use
+- You may use, edit or customize this avatar to your liking
+- You may use this avatar as a base for your own avatars
+- You may publicly distribute edited versions of this avatar or avatars based on it
+- Credit is not required but appreciated
+
+### Commercial use
+You may use this avatar as a base for paid or commissioned Figura avatars *if*:
+- All traces of [Squishy API](https://github.com/MrSirSquishy/SquishyAPI) are removed from the script files (The API does *not* allow commercial use)
+- The visual appearance of the avatar is *significantly* different compared to the original
+- Credit is not required but appreciated
+
+Commercial use for anything outside of Figura is not permitted.

@@ -122,6 +122,8 @@ crouchTargetOffset = 0.0
 
 function events.tick()
     --log(player:getPose())
+
+
     if player:getPose() == "CROUCHING" and not player:getPose() == "FALL_FLYING" then
         crouchTargetOffset = 2.0
         if crouchOffset <= crouchTargetOffset then
@@ -169,7 +171,22 @@ function events.tick()
         end
     end
 
+    local flightSpeed = (player:getVelocity():length()/1.5)
+    
+    if flightSpeed >= 1.0 then
+        flightSpeed = 1.0
+    end
+    --log(flightSpeed)
+    if charAnim["fly"]:isPlaying() and flightSpeed <= 0.01 then
+        flightSpeed = 0.01
+    end
+
+    charAnim.elytra:setSpeed(flightSpeed)
+    charAnim.elytradown:setSpeed(flightSpeed)
+    charAnim.fly:setSpeed(flightSpeed)
+
     if player:getPose() == "FALL_FLYING" or charAnim["fly"]:isPlaying() then
+        
         models.models.ruby.root.Body.Glider:setVisible(true)
         vanilla_model.HELD_ITEMS:setVisible(false)
     else
@@ -190,17 +207,7 @@ function events.tick()
     end
 
     
-    local flightSpeed = player:getVelocity():length()
-    if flightSpeed >= 1.0 then
-        flightSpeed = 1.0
-    end
-    if charAnim["fly"]:isPlaying() and flightSpeed <= 0.01 then
-        flightSpeed = 0.01
-    end
-
-    charAnim.elytra:setSpeed(flightSpeed)
-    charAnim.elytradown:setSpeed(flightSpeed)
-    charAnim.fly:setSpeed(flightSpeed)
+    
     
 end
 
@@ -293,6 +300,7 @@ squapi.smoothHead:new(
     false,    --(true) keepOriginalHeadPos
     nil     --(true) fixPortrait
 )
+
 
 
 --set Ruby's outfit-specific parts
