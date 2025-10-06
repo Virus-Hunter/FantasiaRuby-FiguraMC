@@ -4,13 +4,13 @@
 
 Requires [Figura](https://figuramc.org/)
 
-This is Fantasia Ruby, an avatar project based on my OC. I was working on this for a bit but lost focus a few months ago. I am not working on her atm and don't intend on returning anytime soon but who knows 🤷‍♂️
+This is Fantasia Ruby, an avatar project based on my OC.
 
 **Ruby** is a tricky little feline treasure hunter who's ready for adventure! She is not complete, but there's still a lot to her:
-- Custom walk/run/swim/attack/flight animations
-- Custom jump and crouch poses
-- Custom sword model (toggleable in the action wheel)
+- Loaded with custom animations and poses
+- Custom sword and shield props (both toggleable in the action wheel)
 - Strip down to her skivvies for underwater treasure hunting (toggleable in the action wheel)
+- Partial Better Combat mod compatibility
 - Cloud compatible!
 
 ## 3rd party scripts used:

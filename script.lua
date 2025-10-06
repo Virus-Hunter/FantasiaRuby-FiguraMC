@@ -89,6 +89,9 @@ local blendSettings = {
     {charAnim.blockR, 2, 2},
     {charAnim.blockL, 2, 2},
     {charAnim.crouch_toolblockL, 1.5, 1.5},
+    {charAnim.walk_axe, 2, 2},
+    {charAnim.sprint_axe, 2, 2},
+    
 }
 for _, v in ipairs(blendSettings) do
     v[1]:setBlendTime(v[2], v[3])
@@ -105,7 +108,7 @@ local overrideAnims = {
     charAnim.sit, charAnim.elytra, charAnim.elytradown, charAnim.fly,
     charAnim.idle_tool, charAnim.walk_tool, charAnim.sprint_tool, charAnim.crouch_tool,
     charAnim.bowR, charAnim.attackR_betterCombat, charAnim.jumpup_sword, charAnim.jumpdown_sword, charAnim.blockR, charAnim.blockL, charAnim.crouch_toolblockL, charAnim.sprintjumpdown_sword,
-    charAnim.jumpup_tool, charAnim.jumpdown_tool, charAnim.walkjumpup_tool, charAnim.walkjumpdown_tool, charAnim.sprintjumpup_tool, charAnim.sprintjumpdown_tool, charAnim.jumpup_axe, charAnim.jumpdown_axe, charAnim.walkjumpup_axe, charAnim.walkjumpdown_axe, charAnim.sprintjumpup_axe, charAnim.sprintjumpdown_axe, charAnim.crouch_axe, charAnim.crouch_sword, charAnim.crouchjumpdown, charAnim.watercrouch
+    charAnim.jumpup_tool, charAnim.jumpdown_tool, charAnim.walkjumpup_tool, charAnim.walkjumpdown_tool, charAnim.sprintjumpup_tool, charAnim.sprintjumpdown_tool, charAnim.jumpup_axe, charAnim.jumpdown_axe, charAnim.walkjumpup_axe, charAnim.walkjumpdown_axe, charAnim.sprintjumpup_axe, charAnim.sprintjumpdown_axe, charAnim.crouch_axe, charAnim.crouch_sword, charAnim.crouchjumpdown, charAnim.watercrouch, charAnim.walk_axe
 }
 for _, anim in ipairs(overrideAnims) do
     anim:setOverride(true)
