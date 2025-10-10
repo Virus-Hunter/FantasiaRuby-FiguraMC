@@ -268,6 +268,98 @@ local function getStates(type,o)
     return o.toggleState[type]
 end
 
+-- Resolve an animation either from a userdata/table passed directly or by name string.
+local function resolveAnimRef(o, animRef)
+    if type(animRef) == "table" then
+        -- Heuristic: Animation API exposes methods like setPlaying; trust caller
+        return animRef
+    elseif type(animRef) == "string" then
+        -- Search across all bbmodels added to this controller
+        for _, pack in pairs(o.bbmodels or {}) do
+            local candidate = pack[animRef]
+            if candidate then return candidate end
+        end
+        -- Also try to locate by full animation name match (e.g., pack keys are names);
+        -- if not found, fallthrough to nil
+        return nil
+    else
+        return nil
+    end
+end
+
+-- Configure which animation should replace a slot (e.g., "attackR").
+---@param slot string
+---@param animRef string|table  -- either name within the same pack or an Animation object
+function controller:setOverrideAnim(slot, animRef)
+    if type(slot) ~= "string" then
+        error("First argument slot must be a string (e.g., 'attackR').", 2)
+    end
+    if not self.aList[slot] then
+        error("Unknown animation slot '"..slot.."' for EZAnims controller.", 2)
+    end
+    local anim = resolveAnimRef(self, animRef)
+    if not anim then
+        error("Override animation not found or invalid for slot '"..slot.."'.", 2)
+    end
+    self.animSwaps[slot] = self.animSwaps[slot] or {anim = anim, enabled = false}
+    self.animSwaps[slot].anim = anim
+    return self
+end
+
+-- Toggle whether the override animation for a slot is used.
+---@param slot string
+---@param state? boolean
+function controller:useOverrideAnim(slot, state)
+    if type(slot) ~= "string" then
+        error("First argument slot must be a string (e.g., 'attackR').", 2)
+    end
+    if not self.aList[slot] then
+        error("Unknown animation slot '"..slot.."' for EZAnims controller.", 2)
+    end
+    local cfg = self.animSwaps[slot]
+    if not cfg or not cfg.anim then
+        error("No override animation configured for slot '"..slot.."'. Use setOverrideAnim first.", 2)
+    end
+    cfg.enabled = state ~= false
+    -- cause an immediate re-evaluation on next tick
+    self.toggleDiff = true
+    return self
+end
+
+-- Remove any override for a slot.
+---@param slot string
+function controller:clearOverrideAnim(slot)
+    if type(slot) ~= "string" then
+        error("First argument slot must be a string (e.g., 'attackR').", 2)
+    end
+    self.animSwaps[slot] = nil
+    -- force refresh
+    self.toggleDiff = true
+    return self
+end
+
+-- Convenience: configure override using a source Animation object to infer the slot name.
+---@param srcAnim table  -- Animation belonging to this controller's bbmodel
+---@param animRef string|table
+function controller:setOverrideAnimFor(srcAnim, animRef)
+    if type(srcAnim) ~= "table" or not srcAnim.getName then
+        error("First argument must be an Animation object from the same model.", 2)
+    end
+    local slot = getSeg(srcAnim:getName())[1]
+    return self:setOverrideAnim(slot, animRef)
+end
+
+-- Convenience: toggle override using a source Animation object to infer slot name.
+---@param srcAnim table
+---@param state? boolean
+function controller:useOverrideAnimFor(srcAnim, state)
+    if type(srcAnim) ~= "table" or not srcAnim.getName then
+        error("First argument must be an Animation object from the same model.", 2)
+    end
+    local slot = getSeg(srcAnim:getName())[1]
+    return self:useOverrideAnim(slot, state)
+end
+
 ---@param spec? string
 function controller:getAnimationStates(spec)
     if type(spec) ~= "string" and spec ~= nil then
@@ -286,6 +378,46 @@ end
 
 local function setAnimation(anim,override,state,o)
     local saved = o.aList[anim]
+    local function isLocked(a)
+        return o.lockedAnims and o.lockedAnims[a]
+    end
+    -- If a swap override is configured for this slot and enabled, play that instead
+    local swap = o.animSwaps and o.animSwaps[anim]
+    if swap and swap.enabled and swap.anim then
+        -- If the slot has stop semantics and just turned inactive, leave everything as-is
+        -- (mirrors the original logic's `break` to allow the anim to finish naturally)
+        if (not saved.active) and saved.stop then
+            -- keep the override locked so other slots don't stop it mid-play
+            o.lockedAnims[swap.anim] = anim
+            return
+        end
+
+        -- stop any original animations for this slot, except the override itself
+        for _, value in pairs(saved.list) do
+            if value ~= swap.anim and not isLocked(value) then
+                value:stop()
+            end
+        end
+
+        -- emulate stop/restart behavior used for clicky actions (attack/mine/hurt)
+        if saved.active then
+            if saved.stop and not override then
+                swap.anim:restart()
+            end
+            swap.anim:setPlaying(not override)
+            -- lock the override so other slots don't stop it
+            o.lockedAnims[swap.anim] = anim
+        else
+            -- no stop semantics: make sure override isn't playing
+            swap.anim:setPlaying(false)
+            o.lockedAnims[swap.anim] = nil
+        end
+        return
+    elseif swap and swap.anim then
+        -- ensure swapped animation is not playing when disabled
+        swap.anim:stop()
+        o.lockedAnims[swap.anim] = nil
+    end
     local exists = true
     local words = {}
     for _,value in pairs(saved.list) do
@@ -312,11 +444,11 @@ local function setAnimation(anim,override,state,o)
                     end
                     value:setPlaying(saved.active and not override)
                 else
-                    value:stop()
+                    if not isLocked(value) then value:stop() end
                 end
             end
         else
-            value:stop()
+            if not isLocked(value) then value:stop() end
         end
     end
 end
@@ -644,6 +776,8 @@ local function getBBModels()
         overrideStates = {excluAnims = false,incluAnims = false, allAnims = false},
         oldoverStates = {excluAnims = false,incluAnims = false, allAnims = false},
         setOverrides = {excluAnims = false,incluAnims = false, allAnims = false},
+        animSwaps = {},
+        lockedAnims = {},
         diff = diff
     }, 
     controllerMT)
@@ -693,6 +827,8 @@ function anims:addBBModel(...)
         overrideStates = {excluAnims = false,incluAnims = false, allAnims = false},
         oldoverStates = {excluAnims = false,incluAnims = false, allAnims = false},
         setOverrides = {excluAnims = false,incluAnims = false, allAnims = false},
+        animSwaps = {}, -- per-slot swap overrides: [slot] = { anim = Animation, enabled = boolean }
+        lockedAnims = {},
         diff = diff
     }, 
     controllerMT)

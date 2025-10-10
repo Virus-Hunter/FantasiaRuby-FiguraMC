@@ -56,12 +56,6 @@ local blendSettings = {
     {charAnim.walkjumpdown_tool, 2, 2},
     {charAnim.sprintjumpup_tool, 1, 2},
     {charAnim.sprintjumpdown_tool, 2, 2},
-    {charAnim.jumpup_axe, 1, 2},
-    {charAnim.jumpdown_axe, 2, 2},
-    {charAnim.walkjumpup_axe, 1, 2},
-    {charAnim.walkjumpdown_axe, 2, 2},
-    {charAnim.sprintjumpup_axe, 1, 2},
-    {charAnim.sprintjumpdown_axe, 2, 2},
     {charAnim.walkjumpup_sword, 2 , 2},
     {charAnim.walkjumpdown_sword, 2, 0.001},
     {charAnim.sprint_sword, 2, 2},
@@ -72,26 +66,20 @@ local blendSettings = {
     {charAnim.swim_sword, 4, 4},
     {charAnim.attackR, 1, 0},
     {charAnim.attackR_tool, 1, 0},
-    {charAnim.attackR_axe, 1, 0},
-    {charAnim.mineR_axe, 1, 0},
     {charAnim.mineR, 1, 0},
     {charAnim.elytra, 4, 4},
     {charAnim.fly, 3, 3},
     {charAnim.idle_tool, 2, 2},
     {charAnim.walk_tool, 2, 2},
     {charAnim.sprint_tool, 2, 2},
-    {charAnim.idle_axe, 2, 2},
     {charAnim.crouch_tool, 2, 2},
-    {charAnim.crouch_axe, 2, 2},
     {charAnim.crouch_sword, 2, 2},
     {charAnim.crouchjumpdown, 1, 1},
     {charAnim.watercrouch, 1, 1},
     {charAnim.blockR, 2, 2},
     {charAnim.blockL, 2, 2},
     {charAnim.crouch_toolblockL, 1.5, 1.5},
-    {charAnim.walk_axe, 2, 2},
-    {charAnim.sprint_axe, 2, 2},
-    
+    {charAnim.spearR, 8, 1},
 }
 for _, v in ipairs(blendSettings) do
     v[1]:setBlendTime(v[2], v[3])
@@ -104,21 +92,22 @@ local overrideAnims = {
     charAnim.FP_No_Bob, charAnim.jumpdown, charAnim.walkjumpdown, charAnim.sprintjumpup, charAnim.sprintjumpdown,
     charAnim.idle, charAnim.idle_sword, charAnim.walk_sword, charAnim.jumpup_sword,
     charAnim.walkjumpup_sword, charAnim.walkjumpdown_sword, charAnim.sprintjumpup_sword, charAnim.fall,
-    charAnim.attackR, charAnim.attackR_tool, charAnim.attackR_axe, charAnim.mineR,
+    charAnim.attackR, charAnim.attackR_tool, charAnim.mineR,
     charAnim.sit, charAnim.elytra, charAnim.elytradown, charAnim.fly,
     charAnim.idle_tool, charAnim.walk_tool, charAnim.sprint_tool, charAnim.crouch_tool,
     charAnim.bowR, charAnim.attackR_betterCombat, charAnim.jumpup_sword, charAnim.jumpdown_sword, charAnim.blockR, charAnim.blockL, charAnim.crouch_toolblockL, charAnim.sprintjumpdown_sword,
-    charAnim.jumpup_tool, charAnim.jumpdown_tool, charAnim.walkjumpup_tool, charAnim.walkjumpdown_tool, charAnim.sprintjumpup_tool, charAnim.sprintjumpdown_tool, charAnim.jumpup_axe, charAnim.jumpdown_axe, charAnim.walkjumpup_axe, charAnim.walkjumpdown_axe, charAnim.sprintjumpup_axe, charAnim.sprintjumpdown_axe, charAnim.crouch_axe, charAnim.crouch_sword, charAnim.crouchjumpdown, charAnim.watercrouch, charAnim.walk_axe
+    charAnim.jumpup_tool, charAnim.jumpdown_tool, charAnim.walkjumpup_tool, charAnim.walkjumpdown_tool, charAnim.sprintjumpup_tool, charAnim.sprintjumpdown_tool, charAnim.crouch_sword, charAnim.crouchjumpdown, charAnim.watercrouch,
+    charAnim.spearR
 }
 for _, anim in ipairs(overrideAnims) do
     anim:setOverride(true)
 end
 
 -- Set priorities for attack/mine animations
-charAnim.attackR:setPriority(2)
+charAnim.attackR:setPriority(3)
 charAnim.attackR_tool:setPriority(2)
-charAnim.attackR_axe:setPriority(2)
-charAnim.mineR:setPriority(3)
+charAnim.spearR:setPriority(3)
+charAnim.mineR:setPriority(2)
 charAnim.attackR_betterCombat:setPriority(3)
 
 
@@ -127,9 +116,9 @@ charAnim.attackR_betterCombat:setPriority(3)
 
 
 -- Utility: Check if a string contains any word from a list
-local function itemStateCheck(str, words)
+local function itemStateCheck(words)
     for _, word in ipairs(words) do
-        if string.find(str, word, 1, true) then
+        if string.find(player:getItem(1).id, word, 1, true) then
             return true
         end
     end
@@ -138,12 +127,11 @@ end
 
 -- Check if player is holding a sword-like item
 local function isHoldingSword()
-    local heldItem = player:getHeldItem()
     local swordKeywords = {
         "sword", "knife", "dagger", "blade", "katana", "rapier", "kunai", "sabre", "saber", "scimitar", "shamshir", "estoc", "spear", "lance", "polearm", "trident", "falchion", "javelin", "machete", "pike", "glaive", "halberd", "sickle", "scythe", "knives"
     }
     local nonWeaponKeywords = {"book", "template", "plan", "blueprint", "recipe", "raw", "cooked"}
-    if itemStateCheck(heldItem.id, swordKeywords) and not itemStateCheck(heldItem.id, nonWeaponKeywords) then
+    if itemStateCheck(swordKeywords) and not itemStateCheck(nonWeaponKeywords) then
         return true
     end
     return false
@@ -151,21 +139,31 @@ end
 
 -- Check if player is holding a tool-like item
 local function isHoldingTool()
-    local heldItem = player:getHeldItem()
-    local toolKeywords = {"pickaxe", "shovel", "hammer", "saw", "wrench", "crowbar"}
-    return itemStateCheck(heldItem.id, toolKeywords)
+    local toolKeywords = {"pickaxe", "shovel", "hoe", "hammer", "saw", "wrench", "crowbar"}
+    local nonToolKeywords = {"book", "template", "plan", "blueprint", "recipe", "raw", "cooked"}
+    if itemStateCheck(toolKeywords) and not itemStateCheck(nonToolKeywords) then
+            return true
+    end
+    return false
+end
+-- Check if the player is throwing a throwable item
+local function isHoldingThrowable()
+    local throwableKeywords = {"egg", "ender_pearl", "snowball", "throwing_axe", "shuriken", "dart", "splash", "grenade"}
+    local nonThrowableKeywords = {"book", "template", "plan", "blueprint", "recipe", "raw", "cooked", "trident"}
+    if itemStateCheck(throwableKeywords) and not itemStateCheck(nonThrowableKeywords) then
+            return true
+    end
+    return false
 end
 
 -- Check if player is holding an axe or hoe, but not a pickaxe
 local function isHoldingAxe()
-    local heldItem = player:getHeldItem()
-    local axeKeywords = {"axe", "hoe"}
-    local nonToolKeywords = {"book", "template", "plan", "blueprint", "recipe", "raw", "cooked"}
-    if itemStateCheck(heldItem.id, axeKeywords) and not itemStateCheck(heldItem.id, {"pickaxe"}) then
-        if not itemStateCheck(heldItem.id, nonToolKeywords) then
+    local axeKeywords = {"axe"}
+    local nonAxeKeywords = {"book", "template", "plan", "blueprint", "recipe", "raw", "cooked", "pickaxe"}
+    if itemStateCheck(axeKeywords) and not itemStateCheck(nonAxeKeywords) then
             return true
-        end
     end
+    
     return false
 end
 
@@ -212,7 +210,7 @@ local rotAdd = 0
 function events.tick()
     
     if (player:getPose() == "CROUCHING") then 
-        if (((charAnim["crouch_tool"]:isPlaying()) or (charAnim["crouch_axe"]:isPlaying()) or (charAnim["crouch_sword"]:isPlaying()) or ((charAnim["crouch"]) and not customShieldToggle)) and (shieldLeftOn == true)) then
+        if (((charAnim["crouch_tool"]:isPlaying())  or (charAnim["crouch_sword"]:isPlaying()) or ((charAnim["crouch"]) and not customShieldToggle)) and (shieldLeftOn == true)) then
             if (useKeyHeldDown == true) then
                     
                     
@@ -244,15 +242,16 @@ function events.tick()
                 end
             until ((crouchOffset >= crouchTargetOffset) or (player:getPose() == not "CROUCHING"))
             models.models.ruby.root:setPos(0,crouchOffset,0)
-            if charAnim["attackR"]:isPlaying() or charAnim["mineR"]:isPlaying() or charAnim["mineR_axe"]:isPlaying()  then
+            if (((charAnim["attackR"]:isPlaying()) or (charAnim["mineR"]:isPlaying())) and ((isHoldingTool() == false) and (isHoldingAxe() == false))) then
                 models.models.ruby.root.Body:setRot(-10,0,-20)
                 models.models.ruby.root.Body:setPos(0,-crouchOffset-1,-1)
                 models.models.ruby.root.Body.Neck:setPos(0,0,-1)
                 models.models.ruby.root.Body.Neck.Head:setPos(0,0,-1)
-            elseif charAnim["attackR_tool"]:isPlaying()  then    
+            elseif charAnim["attackR_tool"]:isPlaying() then    
                 models.models.ruby.root.Body:setPos(0,0.5,1.5)
             elseif charAnim["crouch_toolblockL"]:isPlaying() then
                 models.models.ruby.root.Body:setPos(0,0.5,0)
+            
 
                 
             else
@@ -299,27 +298,30 @@ function events.tick()
     charAnim.elytradown:setSpeed(flightSpeed)
     charAnim.fly:setSpeed(flightSpeed)
 
-    if player:getPose() == "FALL_FLYING" or charAnim["fly"]:isPlaying() then
+    --log(charAnim["fly"]:isPlaying())
+    if ((player:getPose() == "FALL_FLYING") or (charAnim["fly"]:isPlaying())) then
         isFlying = true
         models.models.ruby.root.Body.Glider:setVisible(true)
-        vanilla_model.HELD_ITEMS:setVisible(false)
+        if renderer:isFirstPerson() == true then
+            vanilla_model.HELD_ITEMS:setVisible(true)
+        else
+            vanilla_model.HELD_ITEMS:setVisible(false)
+        end
     else
         isFlying = false
         models.models.ruby.root.Body.Glider:setVisible(false)
-        vanilla_model.HELD_ITEMS:setVisible(true)
+            vanilla_model.HELD_ITEMS:setVisible(true)
     end
 
     if player:isSprinting() and not player:isUnderwater() then
         charAnim.sprint:setSpeed(sprintSpeed)
         charAnim.sprint_sword:setSpeed(sprintSpeed)
         charAnim.sprint_tool:setSpeed(sprintSpeed)
-        charAnim.sprint_axe:setSpeed(sprintSpeed)
     
     elseif player:getVelocity():length() > 0.01 and not player:isSprinting() and not player:isUnderwater() then
         charAnim.walk:setSpeed(walkSpeed)
         charAnim.walk_sword:setSpeed(walkSpeed)
         charAnim.walk_tool:setSpeed(walkSpeed)
-        charAnim.walk_axe:setSpeed(walkSpeed)
         charAnim.walkback:setSpeed(walkSpeed)
     end
 
@@ -327,7 +329,7 @@ function events.tick()
         animations:stopAll()
         models.models.ruby.root:setPos(0,0,-7)
         vanilla_model.HELD_ITEMS:setVisible(false)
-    else
+    elseif isFlying == false then
         --models.models.ruby.root:setPos(0,0,0)
         vanilla_model.HELD_ITEMS:setVisible(true)
     end
@@ -336,10 +338,9 @@ function events.tick()
     if timerTarget == 0 then
         if isHoldingSword() == true then
             animModel:setState("sword")
-        elseif isHoldingTool() == true then
-        animModel:setState("tool")
-        elseif isHoldingAxe() == true then
-            animModel:setState("axe")
+        elseif ((isHoldingTool() == true) or (isHoldingAxe() == true)) then
+            --log("ding")
+            animModel:setState("tool")
         else
             timerTarget = 0
             animModel:setState()
@@ -348,7 +349,7 @@ function events.tick()
     
     time = world.getTime()
     
-    if isHoldingTool() == true then
+    if ((isHoldingTool() == true) or(betterCombatToggle == false)) then
         timerTarget = 0
     elseif timerTarget > 0 and time >= timerTarget then
             
@@ -357,21 +358,20 @@ function events.tick()
 
     elseif timerTarget > 0 then
         
-        if (charAnim.mineR_axe:isPlaying()) == false then
-            models.models.ruby.root.Body.RightArm.RightForearm.RightForearmBare.RightHandBare.RightItemPivotBare:setParentType("NONE")
-            models.models.ruby.root.Body.RightArm.RightForearm.RightForearmClothed.RightHand.RightItemPivot:setParentType("NONE")
-            animations:stopAll()
-        else
-            timerTarget = 0
+        models.models.ruby.root.Body.RightArm.RightForearm.RightForearmBare.RightHandBare.RightItemPivotBare:setParentType("NONE")
+        models.models.ruby.root.Body.RightArm.RightForearm.RightForearmClothed.RightHand.RightItemPivot:setParentType("NONE")
+        animations:stopAll()
+    else
+        timerTarget = 0
             
-        end
+    
             
     end
 
 
     if player:isLoaded() == true then
         if timerTarget == 0 then
-            if ((player:getItem(1).id:find("shield")) and (isFlying == false)) then
+            if player:getItem(1).id:find("shield") and not ((isFlying == true) and firstPersonOn == false) then
                 shieldRightOn = (true)
                 models.models.ruby.root.Body.RightArm.RightForearm.RightVanillaShield:setParentType("RIGHT_ITEM_PIVOT")
                 models.models.ruby.root.Body.RightArm.RightForearm.RightForearmClothed.RightHand.RightItemPivot:setParentType("NONE")
@@ -390,13 +390,14 @@ function events.tick()
                 end
                 models.models.ruby.root.Body.RightArm.RightForearm.ShieldR:setVisible(false)
             end
-            if ((player:getItem(2).id:find("shield")) and (isFlying == false)) then
-                shieldLeftOn = (true)
+            if player:getItem(2).id:find("shield") and not ((isFlying == true) and firstPersonOn == false) then
+                shieldLeftOn = true
                 models.models.ruby.root.Body.LeftArm.LeftForearm.LeftForearmClothed.LeftHand.LeftItemPivot:setParentType("NONE")
                 models.models.ruby.root.Body.LeftArm.LeftForearm.LeftForearmBare.LeftHandBare.LeftItemPivotBare:setParentType("NONE")
                 models.models.ruby.root.Body.LeftArm.LeftForearm.LeftVanillaShield:setParentType("LEFT_ITEM_PIVOT")
             else
                 shieldLeftOn = (false)
+                --log(shieldLeftOn)
                 models.models.ruby.root.Body.LeftArm.LeftForearm.ShieldL:setVisible(false)
                 models.models.ruby.root.Body.LeftArm.LeftForearm.LeftVanillaShield:setParentType("NONE")
                 if clothesOn == true then
@@ -411,15 +412,66 @@ function events.tick()
         end
     end
     
+    -- anim override section
+    if (
+         (player:getItem(1).id:find("hoe")) or
+         (player:getItem(1).id:find("trident"))
+    ) then
+        overrideAttackHoriSwing()
+        overrideMineVertSwing()
+    elseif (
+        ((isHoldingAxe() == true) and (betterCombatToggle == false)) 
+    ) then
+        overrideAttackHoriSwing()
+        overrideMineHoriSwing()
+    elseif (
+            (isHoldingThrowable() == true)
+    ) then
+        overrideAttackVertSwing()
+    elseif betterCombatToggle == false then
+        clearAttackOverrides()
+    end
+    
 end
 
-function betterCombatAttack()
-    if betterCombatToggle == true and ((isHoldingSword() == true) or ((isHoldingAxe() == true))) then
-        
+function overrideAttackHoriSwing()
+    animModel:setOverrideAnim("attackR", "attackR")
+    animModel:useOverrideAnim("attackR", true)
+end
 
-        models.models.ruby.root.Body.RightArm.RightForearm.RightForearmBare.RightHandBare.RightItemPivotBare:setParentType("NONE")
-        models.models.ruby.root.Body.RightArm.RightForearm.RightForearmClothed.RightHand.RightItemPivot:setParentType("NONE")
-        setTimer(1)
+function overrideAttackVertSwing()
+    animModel:setOverrideAnim("attackR", "mineR")
+    animModel:useOverrideAnim("attackR", true)
+end
+
+function overrideMineHoriSwing()
+    animModel:setOverrideAnim("mineR", "attackR")
+    animModel:useOverrideAnim("mineR", true)
+end
+
+function overrideMineVertSwing()
+    animModel:setOverrideAnim("mineR", "mineR")
+    animModel:useOverrideAnim("mineR", true)
+end
+
+function clearAttackOverrides()
+    animModel:clearOverrideAnim("attackR")
+    animModel:clearOverrideAnim("mineR")
+end
+
+animModel:setOverrideAnim("trident", "attackR")
+
+
+function betterCombatAttack()
+    if betterCombatToggle == true then
+    
+        if ((isHoldingSword() == true) or ((isHoldingAxe() == true))) then
+            
+
+            models.models.ruby.root.Body.RightArm.RightForearm.RightForearmBare.RightHandBare.RightItemPivotBare:setParentType("NONE")
+            models.models.ruby.root.Body.RightArm.RightForearm.RightForearmClothed.RightHand.RightItemPivot:setParentType("NONE")
+            setTimer(1)
+        end
     end
 end
 
@@ -442,8 +494,8 @@ local firstPersonBobToggled = (true)
 
 --swap ruby's animated arm with a static arm when in first person (this is only viewable for you, other players will see animated arms as usual)
 --this little bit ensures first person works with Better Combat
-local firstPersonOn
-local firstPersonCheck = 0
+firstPersonOn = false
+firstPersonCheck = 0
 function events.render(_, context)
     
     firstPersonOn = ((renderer:isFirstPerson() and not (context == "OTHER" or context=="RENDER")))
@@ -738,6 +790,7 @@ function events.item_render(item)
 
     -- Custom shield rendering
     if item.id:find("shield") then
+        --log(shieldLeftOn)
         if not customShieldToggle then
             models.models.ruby.root.Body.RightArm.RightForearm.ShieldR:setVisible(false)
             models.models.ruby.root.Body.LeftArm.LeftForearm.ShieldL:setVisible(false)
@@ -754,6 +807,11 @@ function events.item_render(item)
                     elseif firstPersonCheck >= 1 then
                         models.models.items.ItemShield:setPos(0, 0, 0)
                         models.models.items.ItemShield:setRot(0, 0, 0)
+                    end
+                    if firstPersonCheck >= 1 then
+                        return models.models.items.ItemShield
+                    else
+                        return models.models.items.ItemBlank
                     end
                 return (firstPersonCheck >= 1) and models.models.items.ItemShield or models.models.items.ItemBlank
             end

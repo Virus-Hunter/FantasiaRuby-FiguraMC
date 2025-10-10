@@ -1,5 +1,14 @@
 # Changelog
 
+## 2025/10/09
+
+### Added
+- Added an anim override function to EZAnims manager
+- Trident throwing pose
+
+### Changed
+- Streamlined some animation transitions
+
 ## 2025/10/06
 
 ### Added
