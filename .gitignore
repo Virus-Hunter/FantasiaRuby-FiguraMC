@@ -1,3 +1,11 @@
 /.vscode
 *.zip
+*.rsls
+*.obj
+*.mtl
+*.ase
 Readme.txt
+Copy.bat
+/misc files
+/scripts/.vscode
+*.gitignore
