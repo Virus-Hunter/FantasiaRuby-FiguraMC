@@ -1,6 +1,6 @@
 # Changelog
 
-## 2026/01/XX
+## 2026/01/28
 
 This may be the final major update as the project has pretty much reached the cloud file limit, despite my best efforts to efficiently squeeze everything down. But I've made sure to make this last hurrah worth while by filling holes in Ruby's animation kit and cleaning things up under the hood as best as possible.
 
