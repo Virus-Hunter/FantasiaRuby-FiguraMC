@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026/02/02
+
+### Changed
+- Removed the _old folder from the scripts folder (Shouldn't have been there in the first place)
+
 ## 2026/01/28
 
 This may be the final major update as the project has pretty much reached the cloud file limit, despite my best efforts to efficiently squeeze everything down. But I've made sure to make this last hurrah worth while by filling holes in Ruby's animation kit and cleaning things up under the hood as best as possible.
@@ -22,7 +27,7 @@ With that being said, I may decide to continue working on Ruby if and when the F
 - Improved compatibility with the Better Combat mod. The script can now *automatically* detect when a Better Combat animation is playing and disables Ruby's animations accordingly, re-enabling them afterwards.
 	- The Better Combat toggle has been removed from the action wheel as it is no longer needed.
 	- (Thanks to heyy_bbooii on the Figura Discord for this one)
-- Head turning is now handled by Sh1lok's Smoothie script
+- Head turning is now handled by Sh1loz's Smoothie script
 - Removed the following animations:
 	- walkjumpup
 	- walkjumpdown

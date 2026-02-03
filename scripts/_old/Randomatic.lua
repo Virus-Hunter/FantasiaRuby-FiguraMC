@@ -1,2 +1,0 @@
--- Removed backup: Randomatic original cleared.
--- File intentionally blank. Use scripts/Animazer.lua instead.

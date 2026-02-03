@@ -1,2 +1,0 @@
--- Removed: original backup cleared. Use scripts/Animazer.lua instead.
--- File intentionally blanked by refactor tool.
