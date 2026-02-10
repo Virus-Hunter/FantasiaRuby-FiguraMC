@@ -1,4 +1,80 @@
-# Changelog
+## 2026/01/28
+
+This may be the final major update as the project has pretty much reached the cloud file limit, despite my best efforts to efficiently squeeze everything down. But I've made sure to make this last hurrah worth while by filling holes in Ruby's animation kit and cleaning things up under the hood as best as possible.
+
+With that being said, I may decide to continue working on Ruby if and when the Figura devs release the next major update which will supposedly increase the cloud file limit AND compress avatars even smaller, among other features that I look forward to taking advantage of.
+
+### Added
+- Sneaking animations, complete with sneaking backwards, blocking and attack/mine variations
+- New action wheel toggle to turn dynamic head and eye movement off/on
+- Crouching jump up animation
+- New fall animation where Ruby starts freaking out
+- Crossbow loading animation and dynamic aiming when holding a loaded crossbow
+- New sleeping pose
+- Action wheel toggles now save
+- Custom scripts to handle most of what the earlier 3rd party scripts were doing (Animazer, TailFX and Looksy)
+### Changed
+- script.lua (The main script) has been renamed to RubyMain.lua
+- All scripts have been moved to a dedicated scripts folder
+- Textures have gone back to being separated files (rubyMain.png, actionWheel.png and itemTex.png)
+- Improved compatibility with the Better Combat mod. The script can now *automatically* detect when a Better Combat animation is playing and disables Ruby's animations accordingly, re-enabling them afterwards.
+	- The Better Combat toggle has been removed from the action wheel as it is no longer needed.
+	- (Thanks to heyy_bbooii on the Figura Discord for this one)
+- Head turning is now handled by Sh1loz's Smoothie script
+- Removed the following animations:
+	- walkjumpup
+	- walkjumpdown
+	- sprintjumpup
+	- sprintjumpdown
+	- walkjumpup_sword
+	- walkjumpdown_sword
+	- sprintjumpup_sword
+	- sprintjumpdown_sword
+	- walkjumpup_tool
+	- walkjumpdown_tool
+	- sprintjumpup_tool
+	- sprintjumpdown_tool
+	- attackR_BetterCombat
+	- attackR_tool
+		- These were simply duplicates of existing animations, but thanks to the new Animazer functionality these are no longer needed.
+- Refined first person empty hand movement for walking, running and jumping
+- Refined swimming animations a bit (including first person)
+- Ruby's weapon no longer floats during Better Combat animations
+- Fixed the UVs on Ruby's ear fluff
+- Fixed texture bleeding issues on Ruby's new head model, among other head-related tweaks
+- elytra and elytradown animations have been slightly adjusted and now transition into each other seamlessly
+- Jumping animation is now tied to up/down velocity
+	- Basically the animation is set to play as Ruby hits the peak of her jump, no matter how high it is
+	- This also means jump animations are now compatible with mods that let you double jump
+- Ruby's legs now dynamically shift while banking with an Elytra
+- Fixed the custom shield briefly flickering when blocking in first person
+- Vanilla shield is now 25% smaller
+
+## 2026/01/14
+
+### Added
+- The facelift update! Ruby has a brand new head model! Featuring eyes that look around, brows that go up and down, and a mouth that eats by the pound.
+	- If you've grown acustomed to the old face, too bad
+- New minor animation set: look_horizontal, look_vertical and blink
+	- This is for the new eye look system, utilizing the Gaze script made by Bitslayn
+- New minor animation: attackR_fly
+	- attackR while flying's been bugged for a good long while so this new anim will act as an override. It's made to look like Ruby's quickly placing a firework at her side. 
+
+### Changed
+- Ruby's head has grown, but her body has shrunk!
+	- This was done to be more accurate to the original character illustration, and to match her lore of being short. She's still as tall as a regular player model, if you include her ears.
+	- If you don't like her new height, open up models/ruby.bbmodel in Blockbench, select the root folder and Transform->Scale. Then, with everything still selected, use the move gizmo to bring her up on the Y axis until the bottom of her feet are aligned with the floor. You can also select the Head folder and scale that down as well.
+- Completely removed the old Skin.png texture file and all meshes that were using it have either been removed or now use the rubyMain.png texture. 
+	-This has slightly alleviated the filesize situation but with the new head model we're still dangerously close to the file size limit.
+- Pushed all of Ruby a little forward in the Z-axis to better align with the regular player model and hitboxes
+- Adjusted the glider straps during the elytradown animation so they're vaguely in Ruby's hands
+- Adjusted leg spacing for the walk_sword animation
+- Added arm movement while jumping in first person
+- Renamed "Toggle Custom Items" option to "Toggle Custom Sword" (Let's face it I'm not adding any more items)
+
+### NOTICE
+- As of writing, *the latest version of Blockbench is **not** compatible with Figura.* If you plan on editing the .bbmodel files, be sure to use [version **4.16.2**](https://github.com/JannisX11/blockbench/releases/tag/v4.12.6), the last version of Blockbench that Figura supports. 
+	- While it is possible to use Legacy Export on the newer versions of Blockbench, this export format does NOT support animations.
 
 ## 2025/10/09
 

@@ -1,3 +1,9 @@
 /.vscode
 *.zip
 Readme.txt
+/scripts/.vscode
+/misc files
+*.mtl
+*/.vscode
+*.obj
+*.bat

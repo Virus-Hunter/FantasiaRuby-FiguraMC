@@ -1,4 +1,4 @@
--- V2 for 0.1.0 and above
+-- V3.0.0 for 0.1.0 and above
 -- Made by JimmyHelp
 
 local anims = {}
@@ -17,6 +17,7 @@ local exList = {
     "walkjumpup",
     "walkjumpdown",
     "fall",
+    "crouchfall",
     "sprint",
     "sprintjumpup",
     "sprintjumpdown",
@@ -101,10 +102,12 @@ for _, key in ipairs(listFiles(nil,true)) do
 end
 if GSAnimBlend then GSAnimBlend.safe = false end
 
-local function setBlendTime(ex,inc,o)
+local function setBlends(ex,inc,o,init)
     for _,list in pairs(o.aList) do
         for _,value in pairs(list.list) do
+            if (GSAnimBlend.animData[value] and GSAnimBlend.animData[value]["EZAnims$hasBlendTime"]) and init then goto CONTINUE end
             value:setBlendTime(list.type == "excluAnims" and ex or inc)
+           ::CONTINUE::
         end
     end
 end
@@ -125,7 +128,7 @@ function controller:setBlendTimes(ex,inc)
     if inc == nil then
         inc = ex
     end
-    setBlendTime(ex,inc,self)
+    setBlends(ex,inc,self)
     return self
 end
 
@@ -149,14 +152,14 @@ local function addAnims(bb,o)
                 end
             end
             for key, _ in pairs(o.aList) do
-                if words[1] == key then
+                if words[1]:match("^"..key.."[0-9]*$") then
                     listy[key].list[#listy[key].list+1] = animation
                 end
             end
         end
     end
 
-    if GSAnimBlend then setBlendTime(4,4,o) end
+    if GSAnimBlend then setBlends(4,4,o,true) end
 end
 
 ---@param anim table
@@ -166,7 +169,7 @@ function controller:setAnims(anim,ifFly)
     for key, value in pairs(anim) do
         self.aList[key].list = value
     end
-    if GSAnimBlend then setBlendTime(4,4,self) end
+    if GSAnimBlend then setBlends(4,4,self,true) end
     return self
 end
 
@@ -190,6 +193,13 @@ end
 local auto = true
 function anims:disableAutoSearch()
     auto = false
+    return self
+end
+
+---@param anim string
+---@param toggle boolean
+function controller:setRestart(anim,toggle)
+    self.aList[anim].restart = not toggle
     return self
 end
 
@@ -268,98 +278,6 @@ local function getStates(type,o)
     return o.toggleState[type]
 end
 
--- Resolve an animation either from a userdata/table passed directly or by name string.
-local function resolveAnimRef(o, animRef)
-    if type(animRef) == "table" then
-        -- Heuristic: Animation API exposes methods like setPlaying; trust caller
-        return animRef
-    elseif type(animRef) == "string" then
-        -- Search across all bbmodels added to this controller
-        for _, pack in pairs(o.bbmodels or {}) do
-            local candidate = pack[animRef]
-            if candidate then return candidate end
-        end
-        -- Also try to locate by full animation name match (e.g., pack keys are names);
-        -- if not found, fallthrough to nil
-        return nil
-    else
-        return nil
-    end
-end
-
--- Configure which animation should replace a slot (e.g., "attackR").
----@param slot string
----@param animRef string|table  -- either name within the same pack or an Animation object
-function controller:setOverrideAnim(slot, animRef)
-    if type(slot) ~= "string" then
-        error("First argument slot must be a string (e.g., 'attackR').", 2)
-    end
-    if not self.aList[slot] then
-        error("Unknown animation slot '"..slot.."' for EZAnims controller.", 2)
-    end
-    local anim = resolveAnimRef(self, animRef)
-    if not anim then
-        error("Override animation not found or invalid for slot '"..slot.."'.", 2)
-    end
-    self.animSwaps[slot] = self.animSwaps[slot] or {anim = anim, enabled = false}
-    self.animSwaps[slot].anim = anim
-    return self
-end
-
--- Toggle whether the override animation for a slot is used.
----@param slot string
----@param state? boolean
-function controller:useOverrideAnim(slot, state)
-    if type(slot) ~= "string" then
-        error("First argument slot must be a string (e.g., 'attackR').", 2)
-    end
-    if not self.aList[slot] then
-        error("Unknown animation slot '"..slot.."' for EZAnims controller.", 2)
-    end
-    local cfg = self.animSwaps[slot]
-    if not cfg or not cfg.anim then
-        error("No override animation configured for slot '"..slot.."'. Use setOverrideAnim first.", 2)
-    end
-    cfg.enabled = state ~= false
-    -- cause an immediate re-evaluation on next tick
-    self.toggleDiff = true
-    return self
-end
-
--- Remove any override for a slot.
----@param slot string
-function controller:clearOverrideAnim(slot)
-    if type(slot) ~= "string" then
-        error("First argument slot must be a string (e.g., 'attackR').", 2)
-    end
-    self.animSwaps[slot] = nil
-    -- force refresh
-    self.toggleDiff = true
-    return self
-end
-
--- Convenience: configure override using a source Animation object to infer the slot name.
----@param srcAnim table  -- Animation belonging to this controller's bbmodel
----@param animRef string|table
-function controller:setOverrideAnimFor(srcAnim, animRef)
-    if type(srcAnim) ~= "table" or not srcAnim.getName then
-        error("First argument must be an Animation object from the same model.", 2)
-    end
-    local slot = getSeg(srcAnim:getName())[1]
-    return self:setOverrideAnim(slot, animRef)
-end
-
--- Convenience: toggle override using a source Animation object to infer slot name.
----@param srcAnim table
----@param state? boolean
-function controller:useOverrideAnimFor(srcAnim, state)
-    if type(srcAnim) ~= "table" or not srcAnim.getName then
-        error("First argument must be an Animation object from the same model.", 2)
-    end
-    local slot = getSeg(srcAnim:getName())[1]
-    return self:useOverrideAnim(slot, state)
-end
-
 ---@param spec? string
 function controller:getAnimationStates(spec)
     if type(spec) ~= "string" and spec ~= nil then
@@ -378,46 +296,6 @@ end
 
 local function setAnimation(anim,override,state,o)
     local saved = o.aList[anim]
-    local function isLocked(a)
-        return o.lockedAnims and o.lockedAnims[a]
-    end
-    -- If a swap override is configured for this slot and enabled, play that instead
-    local swap = o.animSwaps and o.animSwaps[anim]
-    if swap and swap.enabled and swap.anim then
-        -- If the slot has stop semantics and just turned inactive, leave everything as-is
-        -- (mirrors the original logic's `break` to allow the anim to finish naturally)
-        if (not saved.active) and saved.stop then
-            -- keep the override locked so other slots don't stop it mid-play
-            o.lockedAnims[swap.anim] = anim
-            return
-        end
-
-        -- stop any original animations for this slot, except the override itself
-        for _, value in pairs(saved.list) do
-            if value ~= swap.anim and not isLocked(value) then
-                value:stop()
-            end
-        end
-
-        -- emulate stop/restart behavior used for clicky actions (attack/mine/hurt)
-        if saved.active then
-            if saved.stop and not override then
-                swap.anim:restart()
-            end
-            swap.anim:setPlaying(not override)
-            -- lock the override so other slots don't stop it
-            o.lockedAnims[swap.anim] = anim
-        else
-            -- no stop semantics: make sure override isn't playing
-            swap.anim:setPlaying(false)
-            o.lockedAnims[swap.anim] = nil
-        end
-        return
-    elseif swap and swap.anim then
-        -- ensure swapped animation is not playing when disabled
-        swap.anim:stop()
-        o.lockedAnims[swap.anim] = nil
-    end
     local exists = true
     local words = {}
     for _,value in pairs(saved.list) do
@@ -429,7 +307,7 @@ local function setAnimation(anim,override,state,o)
         words = getSeg(value:getName())
         if not words[2] then words[2] = not exists and "" or state end
         if words[2] == "outro" then words[3] = "outro" words[2] = "" end
-        if words[1] == anim then
+        if words[1]:match("^"..anim.."[0-9]*$") then
             if words[3] == "outro" then
                 if words[2] == state then -- outro anims
                     value:setPlaying(not saved.active and not override)
@@ -440,29 +318,48 @@ local function setAnimation(anim,override,state,o)
                 if words[2] == state then -- not outro anims
                     if not saved.active and saved.stop then break end
                     if saved.active and saved.stop and not override then
-                        value:restart()
+                        if not saved.restart then value:restart() else value:play() end
                     end
                     value:setPlaying(saved.active and not override)
                 else
-                    if not isLocked(value) then value:stop() end
+                    value:stop()
                 end
             end
         else
-            if not isLocked(value) then value:stop() end
+            value:stop()
         end
     end
 end
 
-local flying
+if events.damage then -- 0.1.5 check
+    function events.damage()
+        for _,o in pairs(objects) do
+            local hurting = o.aList.hurt
+            hurting.active = true
+            setAnimation("hurt",getOverriders(hurting.type,o),getStates(hurting.type,o),o)
+        end
+    end
+end
+
+local flying = false
 function pings.EZAnims_cFly(x)
     flying = x
+end
+
+function anims:isFlying()
+    return flying
+end
+
+local jumpTracker = false
+function anims:isJumping()
+    return jumpTracker
 end
 
 local diff = false
 local rightResult, leftResult, targetEntity, rightMine, leftMine, rightAttack, leftAttack, oldhitBlock, targetBlock, blockSuccess, blockResult, hitBlock
 local yvel, grounded, oldgrounded, hasJumped, cFlying, oldcFlying
 local cooldown = false
-local updateTimer  = 0
+local updateTimer, oldhp = 0,0
 local toggleDiff
 local timer = 10
 local function getInfo()
@@ -489,12 +386,12 @@ local function getInfo()
     local sitting = vehicle ~= nil or pose == "SITTING" -- if you're reading this code and see this, "SITTING" isn't a vanilla pose, this is for mods
     local passenger = vehicle and vehicle:getControllingPassenger() ~= player
     local creativeFlying = (flying or false) and not sitting
-    local standing = pose == "STANDING"
-    local crouching = pose == "CROUCHING" and not creativeFlying
-    local gliding = pose == "FALL_FLYING"
-    local spin = pose == "SPIN_ATTACK"
-    local sleeping = pose == "SLEEPING"
-    local swimming = pose == "SWIMMING"
+    local crouching = player:isCrouching() and not creativeFlying
+    local gliding = player:isGliding()
+    local spin = player:riptideSpinning()
+    local swimming = player:isVisuallySwimming() or pose == "CRAWLING"
+    local sleeping = pose == "SLEEPING" and not (crouching or gliding or spin or swimming)
+    local standing = not (crouching or gliding or spin or sleeping or swimming)
     local inWater = player:isUnderwater() and not sitting
     local inLiquid = player:isInWater() or player:isInLava()
     local liquidSwim = swimming and inLiquid
@@ -550,6 +447,8 @@ local function getInfo()
     local walking = moving and not sprinting and not isJumping and not sitting
     local forward = walking and not backwards
     local backward = walking and backwards
+
+    jumpTracker = isJumping and not creativeFlying and not falling and not ladder and not sitting -- only used for isJumping
 
     local handedness = player:isLeftHanded()
     local rightItem = player:getHeldItem(handedness)
@@ -649,11 +548,12 @@ local function getInfo()
 
         ob.crouchjumpdown.active = crouching and jumpingDown and not inWater and not ladder
         ob.crouchjumpup.active = crouching and jumpingUp and not inWater and not ladder or (not oneJump and (ob.crouchjumpdown.active and next(ob.crouchjumpdown.list)==nil))
-        ob.crouchwalkback.active = backward and crouching and not inWater and not ladder or (ob.watercrouchwalkback.active and next(ob.watercrouchwalkback.list)==nil and next(ob.watercrouchwalk.list)==nil and next(ob.watercrouch.list)==nil)
-        ob.crouchwalk.active = forward and crouching and not (jumpingDown or jumpingUp) and not inWater and not ladder or (ob.crouchwalkback.active and next(ob.crouchwalkback.list)==nil) or (not oneJump and (ob.crouchjumpup.active and next(ob.crouchjumpup.list)==nil)) or ((ob.watercrouchwalk.active and not ob.watercrouchwalkback.active) and next(ob.watercrouchwalk.list)==nil and next(ob.watercrouch.list)==nil)
+        ob.crouchwalkback.active = backward and crouching and not gliding and not inWater and not ladder or (ob.watercrouchwalkback.active and next(ob.watercrouchwalkback.list)==nil and next(ob.watercrouchwalk.list)==nil and next(ob.watercrouch.list)==nil)
+        ob.crouchwalk.active = forward and crouching and not gliding and not (jumpingDown or jumpingUp) and not inWater and not ladder or (ob.crouchwalkback.active and next(ob.crouchwalkback.list)==nil) or (not oneJump and (ob.crouchjumpup.active and next(ob.crouchjumpup.list)==nil)) or ((ob.watercrouchwalk.active and not ob.watercrouchwalkback.active) and next(ob.watercrouchwalk.list)==nil and next(ob.watercrouch.list)==nil)
         ob.crouch.active = crouching and not walking and not inWater and not isJumping and not ladder and not cooldown or (ob.crouchwalk.active and next(ob.crouchwalk.list)==nil) or (ob.climbcrouch.active and next(ob.climbcrouch.list)==nil) or ((ob.watercrouch.active and not ob.watercrouchwalk.active) and next(ob.watercrouch.list)==nil)
         
-        ob.fall.active = falling and not gliding and not creativeFlying and not sitting
+        ob.fall.active = falling and not gliding and not creativeFlying and not sitting and not crouching or (ob.crouchfall.active and next(ob.crouchfall.list)==nil)
+        ob.crouchfall.active = falling and not gliding and not creativeFlying and not sitting and crouching
         
         ob.sprintjumpdown.active = jumpingDown and sprinting and not creativeFlying and not ladder or false
         ob.sprintjumpup.active = jumpingUp and sprinting and not creativeFlying and not ladder or (not oneJump and (ob.sprintjumpdown.active and next(ob.sprintjumpdown.list)==nil)) or false
@@ -662,16 +562,45 @@ local function getInfo()
         ob.jumpdown.active = jumpingDown and not moving and not ladder and not sprinting and not crouching and not sitting and not sleeping and not gliding and not creativeFlying and not spin and not inWater or (ob.fall.active and next(ob.fall.list)==nil) or (oneJump and (ob.sprintjumpdown.active and next(ob.sprintjumpdown.list)==nil)) or (oneJump and (ob.crouchjumpdown.active and next(ob.crouchjumpdown.list)==nil)) or (oneJump and (ob.walkjumpdown.active and next(ob.walkjumpdown.list)==nil))
         ob.jumpup.active = jumpingUp and not moving and not ladder and not sprinting and not crouching and not sitting and not creativeFlying and not inWater or (ob.jumpdown.active and next(ob.jumpdown.list)==nil) or (ob.trident.active and next(ob.trident.list)==nil) or (oneJump and (ob.sprintjumpup.active and next(ob.sprintjumpup.list)==nil)) or (oneJump and (ob.walkjumpup.active and next(ob.walkjumpup.list)==nil))
 
+        if grounded ~= oldgrounded and not grounded then
+            if (ob.jumpup.active and next(ob.jumpdown.list)==nil) then
+                ob.jumpup.active = false
+                setAnimation("jumpup",getOverriders(ob.jumpup.type,o),getStates(ob.jumpup.type,o),o)
+                ob.jumpup.active = true
+                setAnimation("jumpup",getOverriders(ob.jumpup.type,o),getStates(ob.jumpup.type,o),o)
+            elseif (ob.walkjumpup.active and next(ob.walkjumpdown.list)==nil) then
+                ob.walkjumpup.active = false
+                setAnimation("walkjumpup",getOverriders(ob.walkjumpup.type,o),getStates(ob.walkjumpup.type,o),o)
+                ob.walkjumpup.active = true
+                setAnimation("walkjumpup",getOverriders(ob.walkjumpup.type,o),getStates(ob.walkjumpup.type,o),o)
+            elseif (ob.sprintjumpup.active and next(ob.sprintjumpdown.list)==nil) then
+                ob.sprintjumpup.active = false
+                setAnimation("sprintjumpup",getOverriders(ob.sprintjumpup.type,o),getStates(ob.sprintjumpup.type,o),o)
+                ob.sprintjumpup.active = true
+                setAnimation("sprintjumpup",getOverriders(ob.sprintjumpup.type,o),getStates(ob.sprintjumpup.type,o),o)
+            elseif (ob.crouchjumpup.active and next(ob.crouchjumpdown.list)==nil) then
+                ob.crouchjumpup.active = false
+                setAnimation("crouchjumpup",getOverriders(ob.crouchjumpup.type,o),getStates(ob.crouchjumpup.type,o),o)
+                ob.crouchjumpup.active = true
+                setAnimation("crouchjumpup",getOverriders(ob.crouchjumpup.type,o),getStates(ob.crouchjumpup.type,o),o)
+            elseif (ob.sitjumpup.active and next(ob.sitjumpdown.list)==nil) then
+                ob.sitjumpup.active = false
+                setAnimation("sitjumpup",getOverriders(ob.sitjumpup.type,o),getStates(ob.sitjumpup.type,o),o)
+                ob.sitjumpup.active = true
+                setAnimation("sitjumpup",getOverriders(ob.sitjumpup.type,o),getStates(ob.sitjumpup.type,o),o)
+            end
+        end
+
         ob.sprint.active = sprinting and not isJumping and not creativeFlying and not ladder and not cooldown and not inWater or (not oneJump and (ob.sprintjumpup.active and next(ob.sprintjumpup.list)==nil)) or false
         ob.walkback.active = backward and standing and not creativeFlying and not ladder and not inWater or (ob.flywalkback.active and next(ob.flywalkback.list)==nil and next(ob.flywalk.list)==nil and next(ob.fly.list)==nil)
         ob.walk.active = forward and standing and not creativeFlying and not ladder and not cooldown and not inWater or (ob.walkback.active and next(ob.walkback.list)==nil) or (ob.sprint.active and next(ob.sprint.list)==nil) or (ob.climb.active and next(ob.climb.list)==nil)
-        or (ob.swim.active and next(ob.swim.list)==nil) or (ob.elytra.active and next(ob.elytra.list)==nil) or (ob.jumpup.active and next(ob.jumpup.list)==nil) or (ob.waterwalk.active and (next(ob.waterwalk.list)==nil and next(ob.water.list)==nil)) or ((ob.flywalk.active and not ob.flywalkback.active) and next(ob.flywalk.list)==nil and next(ob.fly.list)==nil)
+        or (ob.swim.active and next(ob.swim.list)==nil) or (ob.elytra.active and next(ob.elytra.list)==nil) or (ob.waterwalk.active and (next(ob.waterwalk.list)==nil and next(ob.water.list)==nil)) or ((ob.flywalk.active and not ob.flywalkback.active) and next(ob.flywalk.list)==nil and next(ob.fly.list)==nil)
         or (ob.crouchwalk.active and (next(ob.crouchwalk)==nil and next(ob.crouch.list)==nil)) or (not oneJump and ob.walkjumpup.active and next(ob.walkjumpup.list)==nil)
         ob.idle.active = not moving and not sprinting and standing and not isJumping and not sitting and not inWater and not creativeFlying and not ladder or (ob.sleep.active and next(ob.sleep.list)==nil) or (ob.sit.active and next(ob.sit.list)==nil)
-        or ((ob.water.active and not ob.waterwalk.active) and next(ob.water.list)==nil) or ((ob.fly.active and not ob.flywalk.active) and next(ob.fly.list)==nil) or ((ob.crouch.active and not ob.crouchwalk.active) and next(ob.crouch.list)==nil)
+        or ((ob.water.active and not ob.waterwalk.active) and next(ob.water.list)==nil) or ((ob.fly.active and not ob.flywalk.active) and next(ob.fly.list)==nil) or ((ob.crouch.active and not ob.crouchwalk.active) and next(ob.crouch.list)==nil) or (ob.jumpup.active and next(ob.jumpup.list)==nil)
 
         ob.death.active = hp <= 0
-        ob.hurt.active = player:getNbt().HurtTime > 0 and hp > 0
+        ob.hurt.active = oldhp ~= hp and hp < oldhp
 
         ob.attackR.active = arm == rightActive and rightAttack
         ob.attackL.active = arm == leftActive and leftAttack
@@ -718,6 +647,7 @@ local function getInfo()
             o.oldToggle[key] = o.toggleState[key]
         end
     end
+    oldhp = hp
     oldhitBlock = hitBlock
     targetBlock = player:getTargetedBlock(true, game and 5 or 4.5)
     blockSuccess, blockResult = pcall(targetBlock.getTextures, targetBlock)
@@ -776,8 +706,6 @@ local function getBBModels()
         overrideStates = {excluAnims = false,incluAnims = false, allAnims = false},
         oldoverStates = {excluAnims = false,incluAnims = false, allAnims = false},
         setOverrides = {excluAnims = false,incluAnims = false, allAnims = false},
-        animSwaps = {},
-        lockedAnims = {},
         diff = diff
     }, 
     controllerMT)
@@ -827,8 +755,6 @@ function anims:addBBModel(...)
         overrideStates = {excluAnims = false,incluAnims = false, allAnims = false},
         oldoverStates = {excluAnims = false,incluAnims = false, allAnims = false},
         setOverrides = {excluAnims = false,incluAnims = false, allAnims = false},
-        animSwaps = {}, -- per-slot swap overrides: [slot] = { anim = Animation, enabled = boolean }
-        lockedAnims = {},
         diff = diff
     }, 
     controllerMT)
