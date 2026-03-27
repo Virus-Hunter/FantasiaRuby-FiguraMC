@@ -7,3 +7,5 @@ Readme.txt
 */.vscode
 *.obj
 *.bat
+*.zip
+/releases

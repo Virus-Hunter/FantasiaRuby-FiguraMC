@@ -1,4 +1,11 @@
-## 2026/01/28
+## 2026/03/27 (1.0.1)
+
+Just a bug fix
+
+### Changed
+- Fixed right eye looking weird when swimming
+
+## 2026/01/28 (1.0.0)
 
 This may be the final major update as the project has pretty much reached the cloud file limit, despite my best efforts to efficiently squeeze everything down. But I've made sure to make this last hurrah worth while by filling holes in Ruby's animation kit and cleaning things up under the hood as best as possible.
 
@@ -91,7 +98,7 @@ With that being said, I may decide to continue working on Ruby if and when the F
 - Custom shield prop and blocking animations
 	- This can be toggled on and off in the action menu, seperate from custom items (Sword)
 	- Also shows up in first person (Did my best to have it raised while blocking)
-- "Tool" state 
+- "Tool" state
 	- When holding a shovel/axe/hoe/pickaxe, Ruby will sling it over her shoulder while moving about
 - Bow drawing animation
 - Midair/water crouch pose (Cannonball!)
