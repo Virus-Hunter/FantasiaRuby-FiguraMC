@@ -1,3 +1,12 @@
+## 2026/03/28 (1.0.2)
+
+Another bug fix
+
+### Changed
+- Fixed head/neck rotation scaling when in a vehicle
+- Fixed head/neck rotation not resetting when leaving a vehicle
+- Tweaked head/neck rotation scaling when crouch walking
+
 ## 2026/03/27 (1.0.1)
 
 Just a bug fix

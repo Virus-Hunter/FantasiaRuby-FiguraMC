@@ -161,7 +161,7 @@ for _, part in ipairs({smoothHead, smoothNeck, smoothBody, smoothCrossbowAim}) d
     part:setKeepVanillaPosition(false)
 end
 
--- Preset Constants
+-- Preset Constants (smoothie states)
 local SMOOTHIE_PRESETS = {
     default = {
         head = {0.2, 0.2, -1}, -- {strength, tiltMultiplier}
@@ -204,8 +204,8 @@ local SMOOTHIE_PRESETS = {
         body = {0.4, 0.2, 5}
     },
     crouchWalk = { -- Fall Flying
-        head = {0.2, 0.2, 2},
-        neck = {0.1, 0.2, 1},
+        head = {0.2, 0.4, 2},
+        neck = {0.1, 0.4, 1},
         body = {0.0, 0.0, 0}
     },
     crouchTool = { -- Fall Flying
@@ -946,8 +946,15 @@ function events.render(delta, context)
             if animModel and animModel.setAllOff then animModel:setAllOff(true) end
             animations:stopAll() 
         end
-        models.models.ruby.root.Body.Neck:setRot(vanillaBodyRot.x*0.5, vanillaBodyRot.y*0.5, vanillaBodyRot.z*0.5)
-        models.models.ruby.root.Body.Neck.Head:setRot(vanillaBodyRot.x*0.5, vanillaBodyRot.y*0.5, vanillaBodyRot.z*0.5)
+        if player:getVehicle() then
+            models.models.ruby.root.Body.Neck:setRot(vanillaBodyRot.x*0.00, vanillaBodyRot.y*0.1, vanillaBodyRot.z*0.0)
+            models.models.ruby.root.Body.Neck.Head:setRot(vanillaBodyRot.x*0.00, vanillaBodyRot.y*0.1, vanillaBodyRot.z*0.0)
+        else
+            models.models.ruby.root.Body.Neck:setRot(vanillaBodyRot.x*0.5, vanillaBodyRot.y*0.5, vanillaBodyRot.z*0.5)
+            models.models.ruby.root.Body.Neck.Head:setRot(vanillaBodyRot.x*0.5, vanillaBodyRot.y*0.5, vanillaBodyRot.z*0.5)
+        end
+
+        
         -- Map the rotation of the right arm to the vanilla right arm
         models.models.ruby.root.Body.RightArm:setRot(vanillaRightArmRot.x, vanillaRightArmRot.y, vanillaRightArmRot.z)
         
@@ -958,6 +965,8 @@ function events.render(delta, context)
         models.models.ruby.root.Body.RightArm.RightForearm.RightForearmBare.RightHandBare.RightItemPivotBare:setOffsetPivot(0, 0, 0)
         models.models.ruby.root.Body.RightArm.RightForearm.RightForearmClothed.RightHand.RightItemPivot:setOffsetPivot(0, 0, 0)
     else
+        models.models.ruby.root.Body.Neck:setRot(0,0,0)
+        models.models.ruby.root.Body.Neck.Head:setRot(0,0,0)
         -- Reset to default state when better combat animation is not playing
         if betterCombatToggle == true then
             betterCombatToggle = false
