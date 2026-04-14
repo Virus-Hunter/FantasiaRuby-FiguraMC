@@ -90,7 +90,7 @@ local animSetup = {
     {"sleep", 1, 1, 6},
     {"crossR", 2, 2},
     {"loadR", 4, 4},
-    {"jumpfull", 1, 1, 2},
+    {"jumpfull", 1, 1, 3},
     {"jumpfull_sword", 1, 1, 3},
     {"jumpfull_tool", 1, 1, 3},
     {"crouchjumpfull", 1, 1, 2}
@@ -696,26 +696,7 @@ function events.tick()
     isFlying = (player:getPose() == "FALL_FLYING") or (charAnim["fly"]:isPlaying()) or anims:isFlying()
     isCrawling = ((player:getPose() == "CROUCHING") and (charAnim.crouchwalk:isPlaying() or charAnim.crouchwalkback:isPlaying())) or (player:getPose() == "SWIMMING")
     
-    if isFlying then
-        
-        models.models.ruby.root.Body.Glider:setVisible(true)
-        
-        if renderer:isFirstPerson() == true then
-            vanilla_model.HELD_ITEMS:setVisible(true)
-        else
-            vanilla_model.HELD_ITEMS:setVisible(false)
-        end
-        if player:getPose() ~= "FALL_FLYING" then
-            
-            charAnim.elytra:stop()
-            charAnim.elytradown:stop()
-        end
-    else
-        charAnim.elytra:stop()
-        charAnim.elytradown:stop()
-        models.models.ruby.root.Body.Glider:setVisible(false)
-        vanilla_model.HELD_ITEMS:setVisible(true)
-    end
+
 
     -- Crossbow Animation & Smoothie Logic
     if isFlying then
@@ -780,7 +761,7 @@ function events.tick()
             end
             models.models.ruby.root.Body.RightArm.RightForearm.ShieldR:setVisible(false)
         end
-        if player:getItem(2).id:find("shield") and not ((isFlying == true) and firstPersonOn == false) then
+        if player:getItem(2).id:find("shield") and (not ((isFlying == true) and firstPersonOn == false) or isBlocking) then
             shieldLeftOn = true
             models.models.ruby.root.Body.LeftArm.LeftForearm.LeftForearmClothed.LeftHand.LeftItemPivot:setParentType("NONE")
             models.models.ruby.root.Body.LeftArm.LeftForearm.LeftForearmBare.LeftHandBare.LeftItemPivotBare:setParentType("NONE")
@@ -831,7 +812,7 @@ function events.tick()
             Animazer:setSlotOverride("blockL", "crouch_toolblockL")
             Animazer:useOverrideAnim("blockL", true)
         else 
-            AAnimazer:clearSlotOverride("blockL")
+            Animazer:clearSlotOverride("blockL")
             Animazer:setSlotOverride("blockL", "blockL")
             Animazer:useOverrideAnim("blockL", true)
         end
@@ -931,6 +912,8 @@ function events.tick()
 
 end
 
+-- better combat first person number
+
 function events.render(delta, context)
     -- Better Combat Animation Detector
     vanillaRightArmRot = vanilla_model.RIGHT_ARM:getOriginRot()
@@ -938,13 +921,15 @@ function events.render(delta, context)
     local legRotY = vanilla_model.RIGHT_LEG:getOriginRot().y
     local vanillaRot = -0.286475
     local tolerance = 0.01  -- Increased tolerance for robustness
-
     if math.abs(legRotY - vanillaRot) > tolerance then
         -- Better combat animation is playing
         if betterCombatToggle == false then
             betterCombatToggle = true
             if animModel and animModel.setAllOff then animModel:setAllOff(true) end
             animations:stopAll() 
+            if renderer:isFirstPerson() then
+                -- models.models.ruby.root:setVisible(false)
+            end
         end
         if player:getVehicle() then
             models.models.ruby.root.Body.Neck:setRot(vanillaBodyRot.x*0.00, vanillaBodyRot.y*0.1, vanillaBodyRot.z*0.0)
@@ -953,8 +938,6 @@ function events.render(delta, context)
             models.models.ruby.root.Body.Neck:setRot(vanillaBodyRot.x*0.5, vanillaBodyRot.y*0.5, vanillaBodyRot.z*0.5)
             models.models.ruby.root.Body.Neck.Head:setRot(vanillaBodyRot.x*0.5, vanillaBodyRot.y*0.5, vanillaBodyRot.z*0.5)
         end
-
-        
         -- Map the rotation of the right arm to the vanilla right arm
         models.models.ruby.root.Body.RightArm:setRot(vanillaRightArmRot.x, vanillaRightArmRot.y, vanillaRightArmRot.z)
         
@@ -984,6 +967,14 @@ function events.render(delta, context)
             models.models.ruby.root.Body.RightArm.RightForearm.RightForearmClothed.RightHand.RightItemPivot:setOffsetPivot(0, 0, 0)
 
         end
+        
+    end
+    if ((renderer:isFirstPerson() == false) and (models.models.ruby.root:getVisible() == false)) then
+            models.models.ruby.root:setVisible(true)
+    elseif ((renderer:isFirstPerson() == true) and (models.models.ruby.root:getVisible() == true) and (betterCombatToggle)) then
+        --models.models.ruby.root:setVisible(false)
+    elseif ((renderer:isFirstPerson() == true) and (models.models.ruby.root:getVisible() == false) and (betterCombatToggle == false)) then
+        models.models.ruby.root:setVisible(true)
     end
     -- Hiding item when crouch walking logic
     if charAnim.crouchwalk:isPlaying() or charAnim.crouchwalkback:isPlaying() then
@@ -998,9 +989,12 @@ function events.render(delta, context)
             models.models.ruby.root.Body.Neck.Head.Jaw:setOffsetRot(0,0,0)
             vanilla_model.RIGHT_ITEM:setVisible(true)
             quickItemPivotRefresh()
-        elseif ((not shieldRightOn) and (not currentCrossbowSmoothieState)) then -- if ruby has a left shield or a loaded crossbow, show on the arm. Otherwise, hide the right item
+        elseif ((not shieldRightOn) and (not currentCrossbowSmoothieState)) then
+            quickItemPivotRefresh()
+            -- if ruby has a left shield or a loaded crossbow, show on the arm. Otherwise, hide the right item
             vanilla_model.RIGHT_ITEM:setVisible(false)
             models.models.ruby.root.Body.Neck.Head.Jaw:setOffsetRot(0,0,0)
+            
         else
             quickItemPivotRefresh()
         end
@@ -1018,7 +1012,17 @@ function events.render(delta, context)
         end
     end
     
-
+    isAttacking = charAnim["attackR"]:isPlaying() or charAnim["attackR_crouchwalk"]:isPlaying() or charAnim["attackR_fly"]:isPlaying() or isAimingSpear
+        isMining = charAnim.mineR:isPlaying()
+        
+        isBlocking = (((shieldRightOn or shieldLeftOn) and useKeyHeldDown)
+        
+        or (charAnim.crouch_toolblockL:isPlaying() 
+        or charAnim.blockL_crouchwalk:isPlaying() 
+        or charAnim.blockL:isPlaying() 
+        or charAnim.blockR:isPlaying() 
+        or player:isBlocking())
+        )
 
     -- Crouch offset logic
     if player:getPose() == "CROUCHING" then
@@ -1046,16 +1050,7 @@ function events.render(delta, context)
             models.models.ruby.root:setPos(0,crouchTargetOffset,0)
         end
             
-        isAttacking = charAnim["attackR"]:isPlaying() or charAnim["attackR_crouchwalk"]:isPlaying() or charAnim["attackR_fly"]:isPlaying() or isAimingSpear
-        isMining = charAnim.mineR:isPlaying()
         
-        isBlocking = (((shieldRightOn or shieldLeftOn) and useKeyHeldDown)
-        or (charAnim.crouch_toolblockL:isPlaying() 
-        or charAnim.blockL_crouchwalk:isPlaying() 
-        or charAnim.blockL:isPlaying() 
-        or charAnim.blockR:isPlaying() 
-        or player:isBlocking())
-        )
         if charAnim.attackR_crouchwalk:isPlaying() then
             models.models.ruby.root.Body:setRot(-5,0,0)
             models.models.ruby.root.Body:setPos(0,0,0)
@@ -1177,10 +1172,11 @@ function events.render(delta, context)
 
     end
 
-    firstPersonOn = ((renderer:isFirstPerson() and not (context == "OTHER" or context=="RENDER")))
+    firstPersonOn = (((renderer:isFirstPerson() and not (context == "OTHER" or context=="RENDER" or context=="MINECRAFT_GUI" or context=="PAPERDOLL" or context=="FIGURA_GUI"))))
+    
         models.models.ruby.root.FPArms:setVisible(firstPersonOn)
         
-        if firstPersonOn == true then
+        if context == "FIRST_PERSON" then
             firstPersonCheck = firstPersonCheck + 1
         else
             firstPersonCheck = firstPersonCheck - 1
@@ -1190,25 +1186,58 @@ function events.render(delta, context)
         elseif firstPersonCheck <= 0 then
             firstPersonCheck = 0
         end
-
-        if firstPersonCheck >= 1 then
+        --if firstPersonCheck >= 1 then
+        if ((renderer:isFirstPerson()) and (betterCombatToggle == true) and (context == "RENDER")) then
             
             models.models.ruby.root.Body:setVisible(false)
             models.models.ruby.root.Body.RightArm:setVisible(false)
             models.models.ruby.root.Body.LeftArm:setVisible(false)
-            if betterCombatToggle == true then
-                models.models.ruby.root.Hips:setVisible(false)
-            else
-                models.models.ruby.root.Hips:setVisible(true)
-            end
+            models.models.ruby.root.Hips:setVisible(false)
+            models.models.ruby.root.LeftLeg:setVisible(false)
+            models.models.ruby.root.RightLeg:setVisible(false)
+
 
         else
             models.models.ruby.root.Hips:setVisible(true)
             models.models.ruby.root.Body:setVisible(true)
             models.models.ruby.root.Body.RightArm:setVisible(true)
             models.models.ruby.root.Body.LeftArm:setVisible(true)
+            models.models.ruby.root.LeftLeg:setVisible(true)
+            models.models.ruby.root.RightLeg:setVisible(true)
         end
-    
+    --log(betterCombatToggle)
+    if isFlying then
+        
+        models.models.ruby.root.Body.Glider:setVisible(true)
+        
+        if (((renderer:isFirstPerson() == true) and (context == "FIRST_PERSON")) or ((charAnim.attackR_fly:isPlaying()) or (charAnim.attackR:isPlaying()) or(charAnim.mineR:isPlaying()) or (betterCombatToggle))) then
+            vanilla_model.RIGHT_ITEM:setVisible(true)
+        elseif (charAnim.attackR_fly:isPlaying() or charAnim.spearR:isPlaying() or charAnim.loadR:isPlaying() or ((useKeyHeldDown)) ) then
+            vanilla_model.RIGHT_ITEM:setVisible(true)
+        elseif (player:getItem(2).id:find("shield")) then
+            vanilla_model.LEFT_ITEM:setVisible(true)
+            vanilla_model.RIGHT_ITEM:setVisible(false)
+        elseif betterCombatToggle == false then
+            vanilla_model.RIGHT_ITEM:setVisible(false)
+            vanilla_model.LEFT_ITEM:setVisible(false)
+        end
+        if player:getPose() ~= "FALL_FLYING" then
+            
+            charAnim.elytra:stop()
+            charAnim.elytradown:stop()
+        end
+    else
+        charAnim.elytra:stop()
+        charAnim.elytradown:stop()
+        models.models.ruby.root.Body.Glider:setVisible(false)
+
+        if((isCrawling == false)) then
+            vanilla_model.HELD_ITEMS:setVisible(true)
+        end
+        if(context == "FIRST_PERSON" and isCrawling) then
+            vanilla_model.HELD_ITEMS:setVisible(true)
+        end
+    end
     
 
 end
@@ -1462,7 +1491,7 @@ function events.item_render(item)
 
         -- First Person Rendering Logic 
         if firstPersonCheck >= 1 then
-            if useKeyHeldDown and shieldActivationTimer == 0 then
+            if ((useKeyHeldDown and shieldActivationTimer == 0) and not ((charAnim.spearR:isPlaying()) or (charAnim.loadR:isPlaying()) or (charAnim.mineR:isPlaying()) or (itemStateCheck({"spear", "trident", "lance"}))))  then
                  -- Apply blocking transform            
                  if shieldLeftOn and not shieldRightOn then
                      models.models.items.ItemShield:setPos(5, 5, 2)
@@ -1472,11 +1501,13 @@ function events.item_render(item)
                      models.models.items.ItemShield:setPos(-5, 5, 2)
                      models.models.items.ItemShield:setRot(5, 10, 15)
                  end
-            else
+                elseif  isBlocking == false then
                 -- Reset to default hold position
                 models.models.items.ItemShield:setPos(0, 0, 0)
                 models.models.items.ItemShield:setRot(0, 0, 0)
             end
+
+            
             return models.models.items.ItemShield
         else
             return models.models.items.ItemBlank

@@ -1,3 +1,16 @@
+## 2026/04/14 (1.0.3)
+
+Admittedly how the code handles hiding away stuff while in first person has been pretty indiscriminate (Better Combat strikes again) but I've taken the time to refine it all.
+
+### Changed
+- Body/Head/Regular arms don't disappear in third person/inventory/paperdoll when using first person mode
+- Items/Shield will now appear in hand when using them while flying
+- Tightening of how the custom shield works in first person
+- Adjustments of the tail animation
+
+### Known Bug
+- Loading a bow or crossbow while flying looks pretty jank. Unfortunately I am at the absolute file size limit so my hands are tied (much like Ruby's)
+
 ## 2026/03/28 (1.0.2)
 
 Another bug fix
