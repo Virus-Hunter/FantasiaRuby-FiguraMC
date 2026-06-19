@@ -1,3 +1,11 @@
+## 2026/06/19 (1.0.4)
+
+Mostly minification of the main script as the upcoming Figura v0.1.6's compression algorithm is not as efficient as previous versions, resulting in the old avatar no longer passing the file size limit for uploading.
+
+### Changed
+- Refinement of RubyMain.lua
+- Adjustments to the Fall animation
+
 ## 2026/04/14 (1.0.3)
 
 Admittedly how the code handles hiding away stuff while in first person has been pretty indiscriminate (Better Combat strikes again) but I've taken the time to refine it all.
