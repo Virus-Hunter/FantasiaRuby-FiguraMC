@@ -1,13 +1,28 @@
+## 2026/06/21 (1.0.4a)
+
+A teeny bit of animation tweaking and further code refinement
+
+### Changed
+- Refined first person empty hand animations while walking/running
+	- The empty hand in both animations didn't look "active" enough so I made them a little more "impactful"
+- Adjusted Ruby's head and gaze during attack and mine animations
+	- It always irked me that she looks kinda tall when attacking while walking/running so that's what this fix was for
+- Refinement of Looksy.lua
+
 ## 2026/06/19 (1.0.4)
 
-Mostly minification of the main script as the upcoming Figura v0.1.6's compression algorithm is not as efficient as previous versions, resulting in the old avatar no longer passing the file size limit for uploading.
+Mostly minification of the main script as Figura v0.1.6's compression algorithm is not as efficient as previous versions, resulting in the old avatar no longer passing the file size limit for uploading.
+
+Also also, as of Figura v0.1.6, Blockbench v5 is now supported so it's OK to edit/save the bbmodel files with the newer version of Blockbench.
 
 ### Changed
 - Refinement of RubyMain.lua
 - Adjustments to the Fall animation
 
+
 ## 2026/04/14 (1.0.3)
 
+#### Versions 1.0.3 and below are NOT cloud-compatible with Figura v0.1.6 and up. Use Figura v0.1.5b for these versions.
 Admittedly how the code handles hiding away stuff while in first person has been pretty indiscriminate (Better Combat strikes again) but I've taken the time to refine it all.
 
 ### Changed
